@@ -19,6 +19,8 @@ function App() {
 
   useEffect(() => {
     const fetchAll = async () => {
+        if(allPokemon.length > 0)return;
+        dispatch(setLoading(true));
       try {
         const response = await fetch(
           "https://pokeapi.co/api/v2/pokemon?limit=1300"
@@ -27,39 +29,30 @@ function App() {
         dispatch(setAll(data.results));
       } catch (error) {
         console.error("Error cargando lista global:", error);
+      }finally{
+        dispatch(setLoading(false));
       }
     };
     fetchAll();
-  }, [dispatch]);
+  }, [dispatch,allPokemon.length]);
 
-  useEffect(() => {
-    const fetchPokemons = async () => {
-      dispatch(setLoading(true));
-      const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon?limit=6&offset=${currentPage}`
-      );
-      const data = await response.json();
+ 
 
-      const details = await Promise.all(
-        data.results.map(async (p) => {
-          const res = await fetch(p.url);
-          return res.json();
-        })
-      );
-      dispatch(setPokemon(details));
-      dispatch(setLoading(false));
-    };
-
-    fetchPokemons();
-  }, [currentPage, dispatch]);
-
-  const displayList = searchTerm
-    ? (allPokemon || [])
-        .filter((p) =>
-          p?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .slice(0, 6)
-    : list || [];
+  const displayList = [...allPokemon]
+    .filter((p) => 
+    p?.name?.toLowerCase().includes(searchTerm.toLowerCase()) 
+  )
+  .sort(function (a, b) {
+    if (a.name < b.name) { 
+      return -1;
+    }
+    if (a.name > b.name) {
+      return 1;
+    }
+    return 0;
+  })
+  .slice(currentPage, currentPage + 6);
+      
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value.toLowerCase());
